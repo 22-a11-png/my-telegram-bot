@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 from aiogram import Bot, Dispatcher, types, F
@@ -6,8 +5,8 @@ from aiogram.filters import CommandStart
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiohttp import web
 
-# Твой токен
-TOKEN = "8984772458:AAFdF0nuzYCoT9gSw8Oe6JabfAHyOKVDD7k"
+# Твой НОВЫЙ токен, который сбросил все конфликты
+TOKEN = "8984772458:AAHEPJEf6wPWq7XSpdBR2RhSmSofDsBJkyk"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -22,7 +21,7 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# Обработчик команды /start (выдаёт меню с кнопками)
+# Обработчик команды /start
 @dp.message(CommandStart())
 async def start_cmd(message: types.Message):
     await message.answer(
@@ -47,10 +46,7 @@ async def start_webserver():
 
 # Главная функция запуска всего приложения
 async def main():
-    # Запускаем веб-сервер в фоновом режиме, чтобы Render видел открытый порт
     await start_webserver()
-    
-    # Запускаем самого бота
     print("--- Бот начинает опрос Telegram (Polling) ---")
     await dp.start_polling(bot)
 
