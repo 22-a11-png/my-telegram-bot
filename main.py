@@ -1,78 +1,43 @@
 import asyncio
-from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+import os
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import CommandStart
+from aiohttp import web
 
-# Твой проверенный токен!
+# Твой токен теперь прописан здесь
 TOKEN = "8984772458:AAFdF0nuzYCoT9gSw8Oe6JabfAHyOKVDD7k"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Создаем меню с ТРЕМЯ кнопками
-main_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="📚 Шпаргалка по командам")],
-        [KeyboardButton(text="⚙️ Кастомизация и Темы")],
-        [KeyboardButton(text="🛠️ Что делать, если... (Решение проблем)")]
-    ],
-    resize_keyboard=True
-)
+# Твои обработчики команд
+@dp.message(CommandStart())
+async def start_cmd(message: types.Message):
+    await message.answer("Привет! Я твой бот, запущенный на бесплатном сервере Linux в облаке!")
 
-# Срабатывает на /start
-@dp.message(F.text == "/start")
-async def cmd_start(message: Message):
-    await message.answer(
-        f"Привет, {message.from_user.first_name}! 🐧\n"
-        "Я твой продвинутый помощник по Linux. Выбери нужный раздел на кнопках ниже:",
-        reply_markup=main_keyboard
-    )
+# Хак для Render: создаем микро-веб-сайт, который слушает нужный порт
+async def handle(request):
+    return web.Response(text="Бот запущен и работает!")
 
-# Кнопка "Шпаргалка"
-@dp.message(F.text == "📚 Шпаргалка по командам")
-async def show_cheatsheet(message: Message):
-    text = (
-        "**🔥 Главные команды для терминала:**\n\n"
-        "**Обновление системы:**\n"
-        "• Arch/CachyOS: `sudo pacman -Syu`\n"
-        "• Ubuntu/Debian: `sudo apt update && sudo apt upgrade`\n\n"
-        "**Управление файлами:**\n"
-        "• `ls` — посмотреть файлы в папке\n"
-        "• `cd имя_папки` — перейти в папку\n"
-        "• `mkdir имя` — создать новую папку"
-    )
-    await message.answer(text, parse_mode="Markdown")
+async def start_webserver():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    # Render автоматически передает номер端口 в переменную окружения PORT
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"--- Веб-сервер для Render запущен на порту {port} ---")
 
-# Кнопка "Кастомизация"
-@dp.message(F.text == "⚙️ Кастомизация и Темы")
-async def show_customization(message: Message):
-    text = (
-        "**🎨 Как сделать Linux красивым:**\n\n"
-        "1. Ищи крутые конфиги на GitHub по запросу **dotfiles**.\n"
-        "2. Загляни на Reddit в сообщество **r/unixporn** — там люди со всего мира делятся своими рабочими столами.\n"
-        "3. Для автоматизации кликов и макросов используй утилиты вроде `xmacro` или скрипты автоматизации."
-    )
-    await message.answer(text, parse_mode="Markdown")
-
-# НОВАЯ КНОПКА: Решение проблем
-@dp.message(F.text == "🛠️ Что делать, если... (Решение проблем)")
-async def show_troubleshooting(message: Message):
-    text = (
-        "**⚠️ Скорая помощь при проблемах в Linux:**\n\n"
-        "**1. Зависла программа и не закрывается:**\n"
-        "• Нажми `Ctrl + Alt + T` (откроется терминал).\n"
-        "• Введи команду `xkill` — появится курсор-крестик. Нажми им на зависшее окно, и оно тут же закроется!\n\n"
-        "**2. Пропал интернет или сеть «глючит»:**\n"
-        "• Перезапусти сетевую службу командой:\n"
-        "`sudo systemctl restart NetworkManager`\n\n"
-        "**3. Система пишет, что диск переполнен:**\n"
-        "• Очисти кэш пакетов Arch/CachyOS:\n"
-        "`sudo pacman -Scc` (удалит старые загруженные файлы пакетов)."
-    )
-    await message.answer(text, parse_mode="Markdown")
-
-# Запуск бота
+# Главная функция запуска всего приложения
 async def main():
-    print("Бот успешно обновлен, запущен и готов к работе!")
+    # Запускаем веб-сервер в фоновом режиме, чтобы Render видел открытый порт
+    await start_webserver()
+    
+    # Запускаем самого бота
+    print("--- Бот начинает опрос Telegram (Polling) ---")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
